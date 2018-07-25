@@ -1,4 +1,4 @@
-package main
+package token
 
 type TokenType string
 type Token struct {
@@ -28,3 +28,15 @@ const (
 
     LET     = "LET"
 )
+
+var keywords = map[string]TokenType{
+	"fn":  FUNCTION,
+	"let": LET,
+}
+
+func LookupIdent(ident string) TokenType {
+    if tok, ok := keywords[ident]; ok {
+        return tok
+    }
+    return IDENT
+}
