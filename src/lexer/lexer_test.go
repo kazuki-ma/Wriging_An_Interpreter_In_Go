@@ -197,7 +197,7 @@ if (5 < 10) {
 		{token.INT, "10"},
 		{token.RPAREN, ")"},
 
-		{token.LBRASE, "{"},
+		{token.LBRACE, "{"},
 
 		{token.RETURN, "return"},
 		{token.TRUE, "true"},
@@ -206,7 +206,6 @@ if (5 < 10) {
 		{token.RBRACE, "}"},
 		{token.ELSE, "else"},
 		{token.LBRACE, "{"},
-		{token.SEMICOLON, ";"},
 
 		{token.RETURN, "return"},
 		{token.FALSE, "false"},
@@ -220,8 +219,8 @@ if (5 < 10) {
 		{token.SEMICOLON, ";"},
 
 		{token.INT, "10"},
-		{token.NE, "=="},
-		{token.INT, "10"},
+		{token.NE, "!="},
+		{token.INT, "9"},
 		{token.SEMICOLON, ";"},
 
 		{token.EOF, ""},
