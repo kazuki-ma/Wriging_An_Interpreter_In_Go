@@ -3,6 +3,7 @@ package ast
 import (
 	"../token"
 	"bytes"
+	"log"
 	"strings"
 )
 
@@ -201,9 +202,9 @@ func (ie *IfExpression) TokenLiteral() string {
 func (ie *IfExpression) String() string {
 	var out bytes.Buffer
 
-	out.WriteString("if")
+	out.WriteString("if (")
 	out.WriteString(ie.Condition.String())
-	out.WriteString(" ")
+	out.WriteString(") ")
 	out.WriteString(ie.Consequence.String())
 	if ie.Alternative != nil {
 		out.WriteString("else ")
@@ -225,9 +226,14 @@ func (bs *BlockStatement) TokenLiteral() string {
 func (bs *BlockStatement) String() string {
 	var out bytes.Buffer
 
+	out.WriteString("{")
+
 	for _, s := range bs.Statements {
 		out.WriteString(s.String())
+		out.WriteString(";")
 	}
+
+	out.WriteString("}")
 
 	return out.String()
 }
@@ -244,6 +250,8 @@ func (fl *FunctionLiteral) TokenLiteral() string {
 }
 func (fl *FunctionLiteral) String() string {
 	params := []string{}
+
+	log.Printf("f.Parameters: %s", fl.Parameters)
 	for _, p := range fl.Parameters {
 		params = append(params, p.String())
 	}

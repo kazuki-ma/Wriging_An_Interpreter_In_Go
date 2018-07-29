@@ -5,18 +5,19 @@ import "../lexer"
 import (
 	"../token"
 	"fmt"
+	"log"
 	"strconv"
 )
 
 const (
-	_ int = iota
+	_           int = iota
 	LOWEST
-	EQUALS      // ==
-	LESSGREATER // > or <
-	SUM         // +
-	PRODUCT     // *
-	PREFIX      // -X or !X
-	CALL        // myFunction(X)
+	EQUALS       // ==
+	LESSGREATER  // > or <
+	SUM          // +
+	PRODUCT      // *
+	PREFIX       // -X or !X
+	CALL         // myFunction(X)
 )
 
 var precendence = map[token.TokenType]int{
@@ -33,7 +34,7 @@ var precendence = map[token.TokenType]int{
 
 type (
 	prefixParseFn func() ast.Expression
-	infixParseFn  func(expression ast.Expression) ast.Expression
+	infixParseFn func(expression ast.Expression) ast.Expression
 )
 
 type Parser struct {
@@ -221,11 +222,12 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 		return nil
 	}
 
-	p.nextToken()
 	fl.Parameters = p.parseFunctionParameters()
+
 	if !p.expectPeek(token.LBRACE) {
 		return nil
 	}
+
 	fl.Body = p.parseBlockStatement()
 
 	return fl
@@ -390,14 +392,17 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 func (p *Parser) parseFunctionParameters() []*ast.Identifier {
 	identifiers := []*ast.Identifier{}
 
+	log.Printf("parseFunctionParameters: %s", identifiers)
 	if p.peekTokenIs(token.RPAREN) {
 		p.nextToken()
 		return identifiers
 	}
 
+	p.nextToken()
 	ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 	identifiers = append(identifiers, ident)
 
+	log.Printf("parseFunctionParameters: %s", identifiers)
 	for p.peekTokenIs(token.COMMA) {
 		p.nextToken()
 		p.nextToken()

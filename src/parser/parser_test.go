@@ -409,6 +409,14 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 			"3 + 4 * 5 == 3 * 1 + 4 * 5",
 			"((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
 		},
+		{
+			"fn(x){ x; }",
+			"fn(x){x}",
+		},
+		{
+			"fn(x, y){ x + y; }",
+			"fn(x, y){ x + y; }",
+		},
 	}
 
 	testParsingUsingString(tests, t)
@@ -626,6 +634,7 @@ func TestParsingPrefixExpressions(t *testing.T) {
 
 func TestFunctionLiteralParsing(t *testing.T) {
 	input := `fn(x, y){ x + y; }`
+	log.Printf("input: %s", input)
 
 	program := parseProgramWithParserErrors(t, input)
 
