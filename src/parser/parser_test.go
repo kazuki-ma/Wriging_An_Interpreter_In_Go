@@ -20,7 +20,7 @@ func TestLetStatements(t *testing.T) {
 		{"let foobar = y", "foobar", "y"},
 	}
 
-	for i, tt := range tests {
+	for _, tt := range tests {
 		program := parseProgramWithParserErrors(t, tt.input)
 
 		if len(program.Statements) != 1 {
@@ -28,7 +28,7 @@ func TestLetStatements(t *testing.T) {
 				1, len(program.Statements))
 		}
 
-		stmt := program.Statements[i]
+		stmt := program.Statements[0]
 		if !testLetStatement(t, stmt, tt.expectedIdentifier) {
 			return
 		}
