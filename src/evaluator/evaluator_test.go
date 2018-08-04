@@ -116,6 +116,7 @@ func TestErrorHandling(t *testing.T) {
 		{"5; true + false; 5;", "ERROR: Unsupported operator: BOOLEAN + BOOLEAN"},
 		{"if (true){ true + false; }", "ERROR: Unsupported operator: BOOLEAN + BOOLEAN"},
 		{"true + true + true", "ERROR: Unsupported operator: BOOLEAN + BOOLEAN"},
+		{"foobar", "ERROR: Identifier not found: foobar"},
 	}
 
 	for _, tt := range tests {
@@ -151,8 +152,9 @@ func testBooleanObject(t *testing.T, evaluated object.Object, expected bool) boo
 
 func TestNull(t *testing.T) {
 	evaluated := testEval("null")
-	if evaluated != nil {
-		t.Errorf("evaluated is not null")
+
+	if evaluated == nil {
+		t.Errorf("evaluated is not null. Got=%s (%T)", evaluated, evaluated)
 	}
 }
 
@@ -179,5 +181,21 @@ func testEval(s string) object.Object {
 	l := lexer.New(s)
 	p := parser.New(l)
 	program := p.ParseProgram()
-	return Eval(program)
+	return Eval(program, object.NewEnvironment())
+}
+
+func TestLetStatement(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"let a = 5; a;", 5},
+		{"let a = 5 * 5; a;", 25},
+		{"let a = 5; let b = a; b", 5},
+		{"let a = 5; let b = 10; let c = a + b; c", 15},
+	}
+
+	for _, tt := range tests {
+		testIntegerObject(t, testEval(tt.input), tt.expected)
+	}
 }

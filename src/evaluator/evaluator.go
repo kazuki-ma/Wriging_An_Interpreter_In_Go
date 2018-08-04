@@ -12,34 +12,52 @@ var (
 	FALSE = &object.Boolean{Value: false}
 )
 
-func Eval(node ast.Node) object.Object {
+func Eval(node ast.Node, environment *object.Environment) object.Object {
 	switch node := node.(type) {
 	case *ast.Program:
-		return evalStatement(node.Statements)
+		return evalStatement(node.Statements, environment)
 	case *ast.ExpressionStatement:
-		return Eval(node.Expression)
+		return Eval(node.Expression, environment)
 	case *ast.BlockStatement:
-		return evalBlockStatement(node.Statements)
+		return evalBlockStatement(node.Statements, environment)
 	case *ast.IntegerLiteral:
 		return &object.Integer{Value: node.Value}
 	case *ast.Boolean:
 		return convertNativeBooleanToObject(node.Value)
 	case *ast.PrefixExpression:
-		return evalPrefixExpression(node)
+		return evalPrefixExpression(node, environment)
 	case *ast.InfixExpression:
-		return evalInfixExpression(node)
+		return evalInfixExpression(node, environment)
 	case *ast.IfExpression:
-		return evalIfExpression(node)
+		return evalIfExpression(node, environment)
 	case *ast.ReturnStatement:
-		return &object.ReturnValue{Value: Eval(node.ReturnValue)}
+		return &object.ReturnValue{Value: Eval(node.ReturnValue, environment)}
+	case *ast.LetStatement:
+		val := Eval(node.Value, environment)
+		if isError(val) {
+			return val
+		}
+		environment.Set(node.Name.Value, val)
+	case *ast.Identifier:
+		return evalIdentifierExpression(node, environment)
 	}
 	return nil
 }
-func evalBlockStatement(statements []ast.Statement) object.Object {
+func evalIdentifierExpression(identifier *ast.Identifier, environment *object.Environment) object.Object {
+	if identifier.Value == "null" {
+		return NULL
+	}
+	value, ok := environment.Get(identifier.Value)
+	if !ok {
+		return newError("Identifier not found: %s", identifier)
+	}
+	return value
+}
+func evalBlockStatement(statements []ast.Statement, environment *object.Environment) object.Object {
 	var result object.Object
 
 	for _, statement := range statements {
-		result = Eval(statement)
+		result = Eval(statement, environment)
 
 		switch result.(type) {
 		case *object.ReturnValue:
@@ -51,15 +69,15 @@ func evalBlockStatement(statements []ast.Statement) object.Object {
 
 	return result
 }
-func evalIfExpression(ifExpression *ast.IfExpression) object.Object {
-	condition := Eval(ifExpression.Condition)
+func evalIfExpression(ifExpression *ast.IfExpression, environment *object.Environment) object.Object {
+	condition := Eval(ifExpression.Condition, environment)
 
 	var ret object.Object
 
 	if condition == TRUE {
-		ret = Eval(ifExpression.Consequence)
+		ret = Eval(ifExpression.Consequence, environment)
 	} else if ifExpression.Alternative != nil {
-		ret = Eval(ifExpression.Alternative)
+		ret = Eval(ifExpression.Alternative, environment)
 	} else {
 		ret = NULL
 	}
@@ -70,9 +88,9 @@ func evalIfExpression(ifExpression *ast.IfExpression) object.Object {
 
 	return ret
 }
-func evalInfixExpression(infixExpression *ast.InfixExpression) object.Object {
-	left := Eval(infixExpression.Left)
-	right := Eval(infixExpression.Right)
+func evalInfixExpression(infixExpression *ast.InfixExpression, environment *object.Environment) object.Object {
+	left := Eval(infixExpression.Left, environment)
+	right := Eval(infixExpression.Right, environment)
 
 	if isError(left) {
 		return left
@@ -151,8 +169,8 @@ func evalInfixIntegerOperator(operator string, left object.Object, right object.
 	return &object.Integer{Value: result}
 }
 
-func evalPrefixExpression(prefixExpression *ast.PrefixExpression) object.Object {
-	right := Eval(prefixExpression.Right)
+func evalPrefixExpression(prefixExpression *ast.PrefixExpression, environment *object.Environment) object.Object {
+	right := Eval(prefixExpression.Right, environment)
 	if isError(right) {
 		return right
 	}
@@ -194,11 +212,11 @@ func convertNativeBooleanToObject(value bool) *object.Boolean {
 		return FALSE;
 	}
 }
-func evalStatement(statements []ast.Statement) object.Object {
+func evalStatement(statements []ast.Statement, environment *object.Environment) object.Object {
 	var result object.Object
 
 	for _, statement := range statements {
-		result = Eval(statement)
+		result = Eval(statement, environment)
 
 		switch result := result.(type) {
 		case *object.ReturnValue:
