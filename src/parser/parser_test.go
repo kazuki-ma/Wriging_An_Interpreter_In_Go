@@ -1,10 +1,10 @@
 package parser
 
 import "testing"
-import "../ast"
+import "ast"
 import (
-	"../lexer"
-	"../token"
+	"lexer"
+	"token"
 	"fmt"
 	"log"
 )

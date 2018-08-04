@@ -1,7 +1,7 @@
 package ast
 
 import (
-	"../token"
+	"token"
 	"bytes"
 	"log"
 	"strings"

@@ -1,10 +1,10 @@
 package repl
 
 import (
-	"../evaluator"
-	"../lexer"
-	"../object"
-	"../parser"
+	"evaluator"
+	"lexer"
+	"object"
+	"parser"
 	"bufio"
 	"fmt"
 	"io"

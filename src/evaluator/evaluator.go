@@ -1,8 +1,8 @@
 package evaluator
 
 import (
-	"../ast"
-	"../object"
+	"ast"
+	"object"
 	"fmt"
 )
 
@@ -11,6 +11,19 @@ var (
 	TRUE  = &object.Boolean{Value: true}
 	FALSE = &object.Boolean{Value: false}
 )
+
+var buildin = map[string]*object.Buildin{
+	"len": &object.Buildin{
+		Fn: func(args ...object.Object) object.Object {
+			switch arg := args[0].(type) {
+			case *object.String:
+				return &object.Integer{Value: int64(len(arg.Value))}
+			default:
+				return newError("not support argument(s) type. %T for %s", arg, "len")
+			}
+		},
+	},
+}
 
 func Eval(node ast.Node, environment *object.Environment) object.Object {
 	switch node := node.(type) {
@@ -65,17 +78,23 @@ func evalCallExpression(callExpression *ast.CallExpression, environment *object.
 		}
 		parameters = append(parameters, evaluated)
 	}
+	return applyFunction(function, parameters, environment)
 
-	return applyFunction(function.(*object.Function), parameters, environment)
 }
-func applyFunction(function *object.Function, arguments []object.Object, environment *object.Environment) object.Object {
+func applyFunction(function object.Object, arguments []object.Object, environment *object.Environment) object.Object {
 	enclosingEnvironment := object.NewEnclosingEnvironment(environment)
 
-	for i, argument := range arguments {
-		enclosingEnvironment.Set(function.Parameters[i].Value, argument)
+	switch function := function.(type) {
+	case *object.Function:
+		for i, argument := range arguments {
+			enclosingEnvironment.Set(function.Parameters[i].Value, argument)
+		}
+		return Eval(function.Body, enclosingEnvironment)
+	case *object.Buildin:
+		return function.Fn(arguments...)
+	default:
+		return newError("not a function: %s", function.Type())
 	}
-
-	return Eval(function.Body, enclosingEnvironment)
 }
 func evalFunction(literal *ast.FunctionLiteral, environment *object.Environment) object.Object {
 	return &object.Function{
@@ -88,11 +107,13 @@ func evalIdentifierExpression(identifier *ast.Identifier, environment *object.En
 	if identifier.Value == "null" {
 		return NULL
 	}
-	value, ok := environment.Get(identifier.Value)
-	if !ok {
-		return newError("Identifier not found: %s", identifier)
+	if value, ok := environment.Get(identifier.Value); ok {
+		return value
 	}
-	return value
+	if value, ok := buildin[identifier.Value]; ok {
+		return value
+	}
+	return newError("Identifier not found: %s", identifier)
 }
 func evalBlockStatement(statements []ast.Statement, environment *object.Environment) object.Object {
 	var result object.Object

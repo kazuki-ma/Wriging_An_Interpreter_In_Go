@@ -1,7 +1,7 @@
 package object
 
 import (
-	"../ast"
+	"ast"
 	"bytes"
 	"fmt"
 	"strings"
@@ -17,6 +17,7 @@ const (
 	ERROR_OBJ        ObjectType = "ERROR"
 	FUNCTION_OBJ     ObjectType = "FUNCTION"
 	STRING_OBJ       ObjectType = "STRING"
+	BUILDIN_OBJ      ObjectType = "BUILDIN"
 )
 
 type Object interface {
@@ -141,4 +142,16 @@ func (function *Function) Inspect() string {
 	out.WriteString("\n}")
 
 	return out.String()
+}
+
+type BuildinFunction func(args ...Object) Object
+type Buildin struct {
+	Fn BuildinFunction
+}
+
+func (buildin *Buildin) Type() ObjectType {
+	return BUILDIN_OBJ
+}
+func (buildin *Buildin) Inspect() string {
+	return "buildin function"
 }

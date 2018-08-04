@@ -1,9 +1,9 @@
 package parser
 
-import "../ast"
-import "../lexer"
+import "ast"
+import "lexer"
 import (
-	"../token"
+	"token"
 	"fmt"
 	"log"
 	"strconv"

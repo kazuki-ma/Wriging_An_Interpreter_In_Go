@@ -1,10 +1,10 @@
 package evaluator
 
 import "testing"
-import "../lexer"
-import "../parser"
+import "lexer"
+import "parser"
 import (
-	"../object"
+	"object"
 	"log"
 )
 
@@ -284,5 +284,19 @@ func TestString(t *testing.T) {
 			t.Errorf("Type is not %s. got=%s", object.STRING_OBJ, evaluated.Type())
 			continue
 		}
+	}
+}
+
+func TestBuildinFunction(t *testing.T) {
+	tests := [] struct {
+		input    string
+		expected int64
+	}{
+		{`len("TEST")`, 4},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+		testIntegerObject(t, evaluated, tt.expected)
 	}
 }
