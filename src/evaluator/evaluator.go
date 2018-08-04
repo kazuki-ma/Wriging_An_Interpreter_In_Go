@@ -3,6 +3,7 @@ package evaluator
 import (
 	"../ast"
 	"../object"
+	"fmt"
 )
 
 var (
@@ -40,8 +41,11 @@ func evalBlockStatement(statements []ast.Statement) object.Object {
 	for _, statement := range statements {
 		result = Eval(statement)
 
-		if returnResult, ok := result.(*object.ReturnValue); ok {
-			return returnResult
+		switch result.(type) {
+		case *object.ReturnValue:
+			return result
+		case *object.Error:
+			return result
 		}
 	}
 
@@ -50,19 +54,32 @@ func evalBlockStatement(statements []ast.Statement) object.Object {
 func evalIfExpression(ifExpression *ast.IfExpression) object.Object {
 	condition := Eval(ifExpression.Condition)
 
+	var ret object.Object
+
 	if condition == TRUE {
-		return Eval(ifExpression.Consequence)
+		ret = Eval(ifExpression.Consequence)
+	} else if ifExpression.Alternative != nil {
+		ret = Eval(ifExpression.Alternative)
+	} else {
+		ret = NULL
 	}
 
-	if ifExpression.Alternative != nil {
-		return Eval(ifExpression.Alternative)
+	if isError(ret) {
+		return ret
 	}
 
-	return NULL
+	return ret
 }
 func evalInfixExpression(infixExpression *ast.InfixExpression) object.Object {
 	left := Eval(infixExpression.Left)
 	right := Eval(infixExpression.Right)
+
+	if isError(left) {
+		return left
+	}
+	if isError(right) {
+		return right
+	}
 
 	switch left.(type) {
 	case *object.Integer:
@@ -70,18 +87,22 @@ func evalInfixExpression(infixExpression *ast.InfixExpression) object.Object {
 	case *object.Boolean:
 		return evalInfixBooleanOperator(infixExpression.Operator, left, right)
 	default:
-		return NULL
+		return newError("Unsupported operator: %s %s %s", left.Type(), infixExpression.Operator, right.Type())
 	}
 }
+func isError(target object.Object) bool {
+	_, ok := target.(*object.Error)
+	return ok
+}
 func evalInfixBooleanOperator(operator string, left object.Object, right object.Object) object.Object {
-	if left.(*object.Boolean) == nil {
-		return NULL
+	leftBoolean, leftOk := left.(*object.Boolean)
+	rightBoolean, rightOk := right.(*object.Boolean)
+	if !(leftOk && rightOk) {
+		return newError("Type mismatch: %s %s %s", left.Type(), operator, right.Type())
 	}
-	if right.(*object.Boolean) == nil {
-		return NULL
-	}
-	leftValue := left.(*object.Boolean).Value
-	rightValue := right.(*object.Boolean).Value
+
+	leftValue := leftBoolean.Value
+	rightValue := rightBoolean.Value
 
 	switch operator {
 	case "==":
@@ -89,18 +110,17 @@ func evalInfixBooleanOperator(operator string, left object.Object, right object.
 	case "!=":
 		return convertNativeBooleanToObject(leftValue != rightValue)
 	default:
-		return NULL
+		return newError("Unsupported operator: %s %s %s", left.Type(), operator, right.Type())
 	}
 }
 func evalInfixIntegerOperator(operator string, left object.Object, right object.Object) object.Object {
-	if left.(*object.Integer) == nil {
-		return NULL
+	leftInteger, leftOk := left.(*object.Integer)
+	rightInteger, rightOk := right.(*object.Integer)
+	if !(leftOk && rightOk) {
+		return newError("Type mismatch: %s %s %s", left.Type(), operator, right.Type())
 	}
-	if right.(*object.Integer) == nil {
-		return NULL
-	}
-	leftValue := left.(*object.Integer).Value
-	rightValue := right.(*object.Integer).Value
+	leftValue := leftInteger.Value
+	rightValue := rightInteger.Value
 
 	var result int64
 
@@ -126,20 +146,24 @@ func evalInfixIntegerOperator(operator string, left object.Object, right object.
 	case "!=":
 		return convertNativeBooleanToObject(leftValue != rightValue)
 	default:
-		return NULL
+		return newError("Unsupported operator: %s %s %s", left.Type(), operator, right.Type())
 	}
 	return &object.Integer{Value: result}
 }
 
 func evalPrefixExpression(prefixExpression *ast.PrefixExpression) object.Object {
 	right := Eval(prefixExpression.Right)
+	if isError(right) {
+		return right
+	}
+
 	switch prefixExpression.Operator {
 	case "!":
-		return evalBandOperatorExpression(right)
+		return evalBangOperatorExpression(right)
 	case "-":
 		return evalMinusOperatorExpression(right)
 	default:
-		return NULL
+		return newError("Unsupported operator: %s %s", prefixExpression.Operator, right.Type())
 	}
 }
 func evalMinusOperatorExpression(right object.Object) object.Object {
@@ -147,11 +171,10 @@ func evalMinusOperatorExpression(right object.Object) object.Object {
 	case *object.Integer:
 		return &object.Integer{Value: -right.Value}
 	default:
-		return NULL
+		return newError("Unsupported operator: %s %s", "-", right.Type())
 	}
-
 }
-func evalBandOperatorExpression(target object.Object) object.Object {
+func evalBangOperatorExpression(target object.Object) object.Object {
 	switch target {
 	case TRUE:
 		return FALSE
@@ -177,10 +200,16 @@ func evalStatement(statements []ast.Statement) object.Object {
 	for _, statement := range statements {
 		result = Eval(statement)
 
-		if returnResult, ok := result.(*object.ReturnValue); ok {
-			return returnResult.Value
+		switch result := result.(type) {
+		case *object.ReturnValue:
+			return result.Value
+		case *object.Error:
+			return result
 		}
 	}
 
 	return result
+}
+func newError(message string, argumentTypes ... interface{}) *object.Error {
+	return &object.Error{Message: fmt.Sprintf(message, argumentTypes...)}
 }

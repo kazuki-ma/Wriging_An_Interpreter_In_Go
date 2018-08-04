@@ -104,6 +104,37 @@ if (10 > 1) {
 	}
 }
 
+func TestErrorHandling(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"1 + true", "ERROR: Type mismatch: INTEGER + BOOLEAN"},
+		{"5 + true; 5;", "ERROR: Type mismatch: INTEGER + BOOLEAN"},
+		{"-true", "ERROR: Unsupported operator: - BOOLEAN"},
+		{"true + false", "ERROR: Unsupported operator: BOOLEAN + BOOLEAN"},
+		{"5; true + false; 5;", "ERROR: Unsupported operator: BOOLEAN + BOOLEAN"},
+		{"if (true){ true + false; }", "ERROR: Unsupported operator: BOOLEAN + BOOLEAN"},
+		{"true + true + true", "ERROR: Unsupported operator: BOOLEAN + BOOLEAN"},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+
+		errorObj, ok := evaluated.(*object.Error)
+		if !ok {
+			t.Errorf("Error object expected but got=%s (%T)\nCase: %s", evaluated, evaluated, tt.input)
+			continue
+		}
+
+		if errorObj.Inspect() != tt.expected {
+			t.Errorf("Error message is not equal to expected value.\n  Got=%s\n  Expected=%s\n  Case=%s",
+				errorObj.Inspect(), tt.expected, tt.input)
+			continue
+		}
+	}
+}
+
 func testBooleanObject(t *testing.T, evaluated object.Object, expected bool) bool {
 	result, ok := evaluated.(*object.Boolean)
 	if !ok {
