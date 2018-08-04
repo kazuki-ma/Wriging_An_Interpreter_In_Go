@@ -264,3 +264,25 @@ func TestClosure(t *testing.T) {
 		testIntegerObject(t, evaluated, tt.expected)
 	}
 }
+
+func TestString(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{`"TEST"`, "TEST"},
+		{`fn(){"TEST"}()`, "TEST"},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+		if evaluated == nil {
+			t.Errorf("Got nil for case = %s", tt.input)
+			continue
+		}
+		if evaluated.Type() != "STRING" {
+			t.Errorf("Type is not %s. got=%s", object.STRING_OBJ, evaluated.Type())
+			continue
+		}
+	}
+}

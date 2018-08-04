@@ -24,6 +24,8 @@ func Eval(node ast.Node, environment *object.Environment) object.Object {
 		return &object.Integer{Value: node.Value}
 	case *ast.Boolean:
 		return convertNativeBooleanToObject(node.Value)
+	case *ast.StringLiteral:
+		return &object.String{Value: node.Value}
 	case *ast.PrefixExpression:
 		return evalPrefixExpression(node, environment)
 	case *ast.InfixExpression:
@@ -143,8 +145,24 @@ func evalInfixExpression(infixExpression *ast.InfixExpression, environment *obje
 		return evalInfixIntegerOperator(infixExpression.Operator, left, right)
 	case *object.Boolean:
 		return evalInfixBooleanOperator(infixExpression.Operator, left, right)
+	case *object.String:
+		return evalInfixStringOperator(infixExpression.Operator, left, right)
 	default:
 		return newError("Unsupported operator: %s %s %s", left.Type(), infixExpression.Operator, right.Type())
+	}
+}
+func evalInfixStringOperator(operator string, left object.Object, right object.Object) object.Object {
+	leftString, leftOk := left.(*object.String)
+	rightString, rightOk := right.(*object.String)
+	if !(leftOk && rightOk) {
+		return newError("Type mismatch: %s %s %s", left.Type(), operator, right.Type())
+	}
+
+	switch operator {
+	case "+":
+		return &object.String{Value: leftString.Value + rightString.Value}
+	default:
+		return newError("Unsupported operator: %s %s %s", left.Type(), operator, right.Type())
 	}
 }
 func isError(target object.Object) bool {

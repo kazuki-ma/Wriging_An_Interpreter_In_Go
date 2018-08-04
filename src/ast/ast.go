@@ -95,6 +95,19 @@ func (i *IntegerLiteral) String() string {
 	return i.Token.Literal
 }
 
+type StringLiteral struct {
+	Token token.Token
+	Value string
+}
+
+func (sl *StringLiteral) expressionNode() {}
+func (sl *StringLiteral) TokenLiteral() string {
+	return sl.Token.Literal
+}
+func (sl *StringLiteral) String() string {
+	return sl.Token.Literal
+}
+
 type ReturnStatement struct {
 	Token       token.Token
 	ReturnValue Expression

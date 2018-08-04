@@ -24,6 +24,10 @@ func rangeTests(t *testing.T, tests []charTest, l *Lexer) {
 				i, tt.expectedLiteral, tok.Literal)
 		}
 	}
+	nextToken := l.NextToken()
+	if nextToken.Type != token.EOF {
+		t.Errorf("There are remaining token. %s", nextToken)
+	}
 }
 
 func TestNextToken(t *testing.T) {
@@ -224,6 +228,24 @@ if (5 < 10) {
 		{token.SEMICOLON, ";"},
 
 		{token.EOF, ""},
+	}
+
+	rangeTests(t, tests, New(input))
+}
+
+func TestStringToken(t *testing.T) {
+	input := `
+let x = "TEST";
+"SINGLE"
+`
+	tests := []charTest{
+		{token.LET, "let"},
+		{token.IDENT, "x"},
+		{token.ASSIGN, "="},
+		{token.STRING, `TEST`},
+		{token.SEMICOLON, ";"},
+
+		{token.STRING, `SINGLE`},
 	}
 
 	rangeTests(t, tests, New(input))

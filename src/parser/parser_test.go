@@ -173,7 +173,7 @@ func testStatement(t *testing.T, program *ast.Program, tests []ast.Statement) {
 			len(program.Statements))
 	}
 
-	for i, _ := range program.Statements {
+	for i := range program.Statements {
 		if test, ok := tests[i].(*ast.ExpressionStatement); ok {
 			stmt, ok := program.Statements[i].(*ast.ExpressionStatement)
 			if !ok {
@@ -411,11 +411,11 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 		},
 		{
 			"fn(x){ x; }",
-			"fn(x){x}",
+			"fn(x) {x;}",
 		},
 		{
 			"fn(x, y){ x + y; }",
-			"fn(x, y){ x + y; }",
+			"fn(x,y) {(x + y);}",
 		},
 	}
 
@@ -667,6 +667,20 @@ func TestFunctionLiteralParsing(t *testing.T) {
 	}
 
 	testInfixExpression(t, bodyStatement.Expression, "x", "+", "y")
+}
+
+func TestStringLiteralParsing(t *testing.T) {
+	inputs := `"TEST"`
+
+	program := parseProgramWithParserErrors(t, inputs)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements has wrong length. Expected=%d. Got=%d",
+			1, len(program.Statements))
+	}
+
+	expressionStatement := program.Statements[0].(*ast.ExpressionStatement)
+	log.Printf("%s", expressionStatement)
 }
 
 func TestCallExpressionParsing(t *testing.T) {
