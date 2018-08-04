@@ -10,14 +10,14 @@ import (
 )
 
 const (
-	_           int = iota
+	_ int = iota
 	LOWEST
-	EQUALS       // ==
-	LESSGREATER  // > or <
-	SUM          // +
-	PRODUCT      // *
-	PREFIX       // -X or !X
-	CALL         // myFunction(X)
+	EQUALS      // ==
+	LESSGREATER // > or <
+	SUM         // +
+	PRODUCT     // *
+	PREFIX      // -X or !X
+	CALL        // myFunction(X)
 )
 
 var precendence = map[token.TokenType]int{
@@ -34,7 +34,7 @@ var precendence = map[token.TokenType]int{
 
 type (
 	prefixParseFn func() ast.Expression
-	infixParseFn func(expression ast.Expression) ast.Expression
+	infixParseFn  func(expression ast.Expression) ast.Expression
 )
 
 type Parser struct {

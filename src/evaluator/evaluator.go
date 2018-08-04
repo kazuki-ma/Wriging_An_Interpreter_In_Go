@@ -38,10 +38,49 @@ func Eval(node ast.Node, environment *object.Environment) object.Object {
 			return val
 		}
 		environment.Set(node.Name.Value, val)
+	case *ast.FunctionLiteral:
+		return evalFunction(node, environment)
 	case *ast.Identifier:
 		return evalIdentifierExpression(node, environment)
+	case *ast.CallExpression:
+		return evalCallExpression(node, environment)
 	}
 	return nil
+}
+func evalCallExpression(callExpression *ast.CallExpression, environment *object.Environment) object.Object {
+	function := Eval(callExpression.Function, environment)
+
+	if (isError(function)) {
+		return function
+	}
+
+	var parameters []object.Object
+
+	for _, argmentExpression := range callExpression.Arguments {
+		evaluated := Eval(argmentExpression, environment)
+		if (isError(evaluated)) {
+			return evaluated;
+		}
+		parameters = append(parameters, evaluated)
+	}
+
+	return applyFunction(function.(*object.Function), parameters, environment)
+}
+func applyFunction(function *object.Function, arguments []object.Object, environment *object.Environment) object.Object {
+	enclosingEnvironment := object.NewEnclosingEnvironment(environment)
+
+	for i, argument := range arguments {
+		enclosingEnvironment.Set(function.Parameters[i].Value, argument)
+	}
+
+	return Eval(function.Body, enclosingEnvironment)
+}
+func evalFunction(literal *ast.FunctionLiteral, environment *object.Environment) object.Object {
+	return &object.Function{
+		Body:        literal.Body,
+		Parameters:  literal.Parameters,
+		Environment: environment,
+	}
 }
 func evalIdentifierExpression(identifier *ast.Identifier, environment *object.Environment) object.Object {
 	if identifier.Value == "null" {
@@ -209,7 +248,7 @@ func convertNativeBooleanToObject(value bool) *object.Boolean {
 	if value {
 		return TRUE
 	} else {
-		return FALSE;
+		return FALSE
 	}
 }
 func evalStatement(statements []ast.Statement, environment *object.Environment) object.Object {
@@ -228,6 +267,6 @@ func evalStatement(statements []ast.Statement, environment *object.Environment) 
 
 	return result
 }
-func newError(message string, argumentTypes ... interface{}) *object.Error {
+func newError(message string, argumentTypes ...interface{}) *object.Error {
 	return &object.Error{Message: fmt.Sprintf(message, argumentTypes...)}
 }

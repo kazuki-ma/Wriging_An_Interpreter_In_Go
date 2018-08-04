@@ -3,10 +3,13 @@ package evaluator
 import "testing"
 import "../lexer"
 import "../parser"
-import "../object"
+import (
+	"../object"
+	"log"
+)
 
 func TestEvalIntegerExpression(t *testing.T) {
-	tests := [] struct {
+	tests := []struct {
 		input    string
 		expected int64
 	}{
@@ -59,7 +62,7 @@ func TestEvalBooleanExpression(t *testing.T) {
 }
 
 func TestEvalIfExpression(t *testing.T) {
-	tests := [] struct {
+	tests := []struct {
 		input    string
 		expected bool
 	}{
@@ -76,7 +79,7 @@ func TestEvalIfExpression(t *testing.T) {
 }
 
 func TestReturnStatement(t *testing.T) {
-	tests := [] struct {
+	tests := []struct {
 		input    string
 		expected int64
 	}{
@@ -145,9 +148,9 @@ func testBooleanObject(t *testing.T, evaluated object.Object, expected bool) boo
 
 	if result.Value != expected {
 		t.Errorf("evaluated result %t is not expected %v.", evaluated, expected)
-		return false;
+		return false
 	}
-	return true;
+	return true
 }
 
 func TestNull(t *testing.T) {
@@ -197,5 +200,67 @@ func TestLetStatement(t *testing.T) {
 
 	for _, tt := range tests {
 		testIntegerObject(t, testEval(tt.input), tt.expected)
+	}
+}
+
+func TestFunctionObject(t *testing.T) {
+	input := `fn (x) { x + 2; }`
+
+	evaluated := testEval(input)
+	fn, ok := evaluated.(*object.Function)
+	if !ok {
+		t.Errorf("evaluated is not function. got=%s(%T)", evaluated, evaluated)
+		return
+	}
+
+	if len(fn.Parameters) != 1 {
+		t.Errorf("Parameter length mismatch. Expected=%d, got=%d", 1, len(fn.Parameters))
+	}
+	parameter := fn.Parameters[0]
+	if parameter.Value != "x" {
+		t.Fatalf("parameter is not 'x'. got=%q", parameter)
+	}
+
+	expectedBody := "{(x + 2);}"
+
+	if fn.Body.String() != expectedBody {
+		expectError(t, expectedBody, fn.Body.String())
+	}
+}
+
+func expectError(t *testing.T, expected interface{}, actual interface{}) {
+	t.Errorf("Expected %s (%T) but got %s (%T)", expected, expected, actual, actual)
+}
+
+func TestFunctionApplication(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"fn(x){x}(1);", 1},
+		{"let a = fn(x){x}; a(1);", 1},
+		{"let b = 1; let a = fn(){b}; a();", 1},
+	}
+
+	for _, tt := range tests {
+		log.Printf("----- Case %s", tt.input)
+		evaluated := testEval(tt.input)
+		testIntegerObject(t, evaluated, tt.expected)
+	}
+}
+
+func TestClosure(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"let a = 10; let f = fn(){a}; f()", 10},
+	}
+
+	for _, tt := range tests {
+		log.Printf("----- Case: %s", tt.input)
+
+		evaluated := testEval(tt.input)
+		testIntegerObject(t, evaluated, tt.expected)
 	}
 }
