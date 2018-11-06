@@ -19,24 +19,27 @@ func TestLetStatements(t *testing.T) {
 		{"let y = true", "y", true},
 		{"let foobar = y", "foobar", "y"},
 	}
+	
 
 	for _, tt := range tests {
-		program := parseProgramWithParserErrors(t, tt.input)
+		t.Run(tt.input, func(t *testing.T) {
+			program := parseProgramWithParserErrors(t, tt.input)
 
-		if len(program.Statements) != 1 {
-			t.Fatalf("program.Statements does not contain %d statements. got=%d",
-				1, len(program.Statements))
-		}
+			if len(program.Statements) != 1 {
+				t.Fatalf("program.Statements does not contain %d statements. got=%d",
+					1, len(program.Statements))
+			}
 
-		stmt := program.Statements[0]
-		if !testLetStatement(t, stmt, tt.expectedIdentifier) {
-			return
-		}
+			stmt := program.Statements[0]
+			if !testLetStatement(t, stmt, tt.expectedIdentifier) {
+				return
+			}
 
-		val := stmt.(*ast.LetStatement).Value
-		if !testLiteralExpression(t, val, tt.expectedValue) {
-			return
-		}
+			val := stmt.(*ast.LetStatement).Value
+			if !testLiteralExpression(t, val, tt.expectedValue) {
+				return
+			}
+		})
 	}
 }
 

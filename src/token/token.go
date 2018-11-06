@@ -42,6 +42,8 @@ const (
 
 	EQ = "=="
 	NE = "!="
+
+	NEW_LINE = "\\n"
 )
 
 var keywords = map[string]TokenType{
